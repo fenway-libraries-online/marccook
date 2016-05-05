@@ -1,0 +1,272 @@
+#!/usr/bin/perl
+
+exec 'perldoc', $0;
+
+=head1 NAME
+
+marccook - the MARC record cookbook
+
+=head1 DESCRIPTION
+
+This cookbook contains a number of C<recipes> that you can use to filter,
+modify, and otherwise manipulate MARC21 bibliographic, holdings, and authority
+records.
+
+Almost all of the recipes are for use at the command line; thus, they are
+prefixed with the generic prompt C<$>:
+
+    $ marcgrep +951 < foo.mrc
+
+Some commands are listed with comments; these are not meant to be typed, thus
+the following is equivalent:
+
+    $ marcgrep +951 < foo.mrc  # Extract records with a 951 field
+    
+Occasionally, a recipe is a chunk of Perl code; when this is the case, the
+first line will be the generic Perl hashbang line C<#!/usr/bin/perl>:
+
+    #!/usr/bin/perl
+    # Fix record lengths
+    $/ = "\x1d";
+    while (<>) {
+        substr($_, 0, 5) = sprintf '%05d', length;
+        print;
+    }
+
+You may need to adjust this in order to adapt such recipes into your own
+environment.
+
+=head1 TOOLS
+
+Nearly all of the scripts in this cookbook depend (either directly or
+indirectly) upon the Perl module L<MARC::Loop>, available from CPAN at
+L<https://metacpan.org/pod/MARC::Loop>.  Some of them are shell scripts; these
+are all written in the Z shell and thus require L<zsh(1)>.  A few depend on
+L<MARC::Record> and related modules.
+
+=head1 BASICS
+
+=head2 Count MARC records
+
+To count MARC records, use L<marccount(1)>:
+
+    $ marccount < foo.mrc  # Read records from standard input
+    $ marccount foo.mrc    # Read records from a single file
+    $ marccount *.mrc      # Read records from multiple files
+
+By default, holdings records count toward the total.  To count B<groups> of
+records, where each group is a bib record followed by zero or more holdings
+records, use option B<-h>:
+
+    $ marccount -h foo.mrc
+
+=head2 Verify the validity of MARC records
+
+L<marcdiag(1)> focuses mostly on the structural integrity of MARC records:
+
+    $ marcdiag foo.mrc
+
+Use option B<-s> to be stricter about what is considered an error:
+
+    $ marcdiag -s foo.mrc
+
+L<marclint(1)> takes a more high-level view, checking for semantic correctness
+(e.g., every bib record must have a 245 field):
+
+    $ marclint foo.mrc
+
+Both tools generate a summary at the end.
+
+=head2 View MARC records as plain text
+
+To see a simple plain-text representation of a MARC record, use
+L<marcdisasm(1)>:
+
+    $ marcdisasm foo.mrc
+
+Option B<-1> puts all of the subfields within a data field on a single line:
+
+    $ marcdisasm -1 foo.mrc
+
+=head2 View MARC records as fancy text
+
+L<marchilite(1)> does something similar to L<marcdisasm(1)>, but with color goodness thrown in:
+
+    $ marchilite foo.mrc
+
+Most of the time, you will want to see record numbers but not count holdings records that follow a bib record:
+
+    $ marchilite -n -h foo.mrc
+
+=head2 View MARC records in a raw dump format
+
+Sometimes, a record is so messed up that you need to see every byte to figure
+out what is wrong with it.  L<marchex(1)> does that, and more, but its output
+is very long so you will almost certainly want to pipe it through a pager such
+as L<less(1)>:
+
+    $ marchex foo.mrc | less
+
+Showing record numbers and subfield identifiers may help you interpret the output:
+
+    $ marchex -ns foo.mrc
+
+=head2 View MARC records in a pager
+
+By combining a MARC-to-text filter and a pager, you can easily browse through a
+file of any size:
+
+    $ marchilite foo.mrc | less -R
+
+(Option B<-R> preserves color codes that L<less(1)> might otherwise strip.)
+
+But of course there's a simpler way:
+
+    $ marcless foo.mrc
+
+If the record you want to look at is in Voyager, and you know its bib ID, then
+it's a single command:
+
+    $ vless 123
+
+You can page through any number of bib records, and with option B<-H> you can
+also see all of their MFHDs:
+
+    $ vless -H 123 456 789
+
+=head1 FILTERING RECORDS
+
+The source of MARC records (e.g., C<< < foo.mrc >>) is not shown in these
+examples.
+
+=head2 Extract a range of records from a file
+
+The first record:
+
+    $ marcn 1
+
+The first ten records:
+
+    $ marcn 1-10
+
+The last record:
+
+    $ marcn n
+
+=head2 Extract a bib and its MFHDs as a group
+
+The first bib record and any MFHDs that immediately follow it:
+
+    $ marcn -h 1
+
+The first ten bib records with their MFHDs:
+
+    $ marcn -h 1-10
+
+=head2 Sample records from a file
+
+Extract every tenth record:
+
+    $ marcn '*/10'
+
+Extract every 20th record, starting with the third record:
+
+    $ marcn '*/20+3'
+
+Extract records randomly, with each record having a 1% probability of being
+printed:
+
+    $ marcn -r 0.01
+
+=head2 Extract bibs or MFHDs from an interleaved file
+
+Given a file of interleaved bibs and MFHDs, there are all sorts of things you might need to do...
+
+Drop all MFHDs:
+
+    $ marc-drop-holdings
+
+Drop MFHDs with location B<FLO-REVIEW> in the 852 field, subfield $b:
+
+    $ marc-drop-holdings -d FLO-REVIEW
+
+Drop all MFHDs B<except> those with a location B<FLO-REVIEW>:
+
+    $ marc-drop-holdings -k FLO-REVIEW
+
+Drop all bib records:
+
+    $ marc-drop-bibs
+
+Drop any bib records that are not followed by a MFHD:
+
+    $ marc-drop-bare-bibs
+
+=head2 Filter by the presence of absence of fields or subfields
+
+Extract records that contain an 049 field:
+
+    $ marcgrep +049
+
+Extract records without an 049 field:
+
+    $ marcgrep -v +049
+
+Drop records with both a 100 field and a 110 field
+
+    $ marcgrep +100 +110
+
+Drop records with either a 100 field or a 110 field
+
+    $ marcgrep -e +100 +110
+
+Extract records that have more than one 245 field:
+
+    $ marcgrep '#245 > 1'
+
+Extract records whose 245 field has two or more of subfield $a:
+
+    $ marcgrep '#245a > 1'
+
+Extract records with fewer than five fields total:
+
+    $ marcgrep -n '#(*) < 5'
+
+=head2 Filter by the contents of fields and subfields
+
+Extract records containing a particular string anywhere in the record:
+
+    $ marcgrep -r Philadelphia
+
+Extract records whose 001 field is C<abc123>:
+
+    $ marcgrep '001 = abc123'
+
+Extract records whose 245 field begins with C<The > (note the trailing space)
+but has second indicator zero:
+
+    $ marcgrep '245 ~ ^The ' '245:2 = 0'
+
+Extract the first record whose title proper matches a particular regular expression
+
+    $ marcgrep -1 '245a ~ war.*peace|peace.*war'
+
+=head1 MODIFYING RECORDS
+
+=head2 Edit MARC records
+
+    $ marcedit foo.mrc
+
+=head2 Edit MARC records in Voyager
+
+The hard way:
+
+    $ vget 123 4567 > foo.mrc
+    $ marcedit foo.mrc
+    $ vreplace foo.mrc
+
+Or the easy way:
+
+    $ vbibedit 123 4567
+
+=cut
