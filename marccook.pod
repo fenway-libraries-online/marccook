@@ -1,10 +1,14 @@
 #!/usr/bin/perl
 
-exec 'perldoc', $0;
+exec 'perldoc', @ARGV, $0;
 
 =head1 NAME
 
 marccook - the MARC record cookbook
+
+=head1 VERSION
+
+Version 0.01 last modified 2016-05-05
 
 =head1 DESCRIPTION
 
@@ -269,4 +273,16 @@ Or the easy way:
 
     $ vbibedit 123 4567
 
+=head1 AUTHOR
+
+Paul Hoffman E<lt>paul@flo.orgE<gt>
+
+=head1 COPYRIGHT
+
+Copyright 2016 Fenway Libraries Online.
+
+Distributed under the GNU General Public License, version 2.
+
 =cut
+
+# vim: set et ts=4 sw=4 ai ci:
