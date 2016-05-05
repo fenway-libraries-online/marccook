@@ -8,7 +8,7 @@ marccook - the MARC record cookbook
 
 =head1 VERSION
 
-Version 0.01 last modified 2016-05-05
+Version %VERSION% (last modified %LASTMOD%)
 
 =head1 DESCRIPTION
 
