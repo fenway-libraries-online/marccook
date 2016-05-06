@@ -6,10 +6,6 @@ exec 'perldoc', @ARGV, $0;
 
 marccook - the MARC record cookbook
 
-=head1 VERSION
-
-Version %VERSION% (last modified %LASTMOD%)
-
 =head1 DESCRIPTION
 
 This cookbook contains a number of C<recipes> that you can use to filter,
@@ -21,8 +17,7 @@ prefixed with the generic prompt C<$>:
 
     $ marcgrep +951 < foo.mrc
 
-Some commands are listed with comments; these are not meant to be typed, thus
-the following is equivalent:
+Some commands are listed with comments; these are not meant to be typed:
 
     $ marcgrep +951 < foo.mrc  # Extract records with a 951 field
     
@@ -50,7 +45,7 @@ L<MARC::Record> and related modules.
 
 =head1 BASICS
 
-=head2 Count MARC records
+=head2 Counting records
 
 To count MARC records, use L<marccount(1)>:
 
@@ -64,45 +59,59 @@ records, use option B<-h>:
 
     $ marccount -h foo.mrc
 
+=head2 Counting fields
+
+Count the total number of fields in each record:
+
+    $ marc-fields -c < foo.mrc
+
+Count the number of 6xx fields in each record:
+
+    $ marc-fields -c {600..699} < foo.mrc
+
+Summarize all fields in all records:
+
+    $ marc-fields -t < foo.mrc
+
 =head2 Verify the validity of MARC records
 
-L<marcdiag(1)> focuses mostly on the structural integrity of MARC records:
+Check the structural integrity of MARC records, plus some other parts of the
+leader:
 
     $ marcdiag foo.mrc
 
-Use option B<-s> to be stricter about what is considered an error:
+Same thing, but being stricter about what is considered an error:
 
     $ marcdiag -s foo.mrc
 
-L<marclint(1)> takes a more high-level view, checking for semantic correctness
-(e.g., every bib record must have a 245 field):
+Check records for semantic correctness (e.g., every bib record must have a 245
+field):
 
     $ marclint foo.mrc
 
-Both tools generate a summary at the end.
+=head2 Viewing records
 
-=head2 View MARC records as plain text
-
-To see a simple plain-text representation of a MARC record, use
-L<marcdisasm(1)>:
+Print a simple plain-text representation of MARC records:
 
     $ marcdisasm foo.mrc
 
-Option B<-1> puts all of the subfields within a data field on a single line:
+Same thing, but with all subfields within a data field on a single line:
 
     $ marcdisasm -1 foo.mrc
 
-=head2 View MARC records as fancy text
-
-L<marchilite(1)> does something similar to L<marcdisasm(1)>, but with color goodness thrown in:
+Print a text representation using color to visually distinguish structural
+elements such as subfield identifiers:
 
     $ marchilite foo.mrc
 
-Most of the time, you will want to see record numbers but not count holdings records that follow a bib record:
+Same thing, with record numbers added:
+
+    $ marchilite -n foo.mrc
+
+Same thing, with record numbers added (counting a bib and its MFHDs as one
+record):
 
     $ marchilite -n -h foo.mrc
-
-=head2 View MARC records in a raw dump format
 
 Sometimes, a record is so messed up that you need to see every byte to figure
 out what is wrong with it.  L<marchex(1)> does that, and more, but its output
@@ -114,8 +123,6 @@ as L<less(1)>:
 Showing record numbers and subfield identifiers may help you interpret the output:
 
     $ marchex -ns foo.mrc
-
-=head2 View MARC records in a pager
 
 By combining a MARC-to-text filter and a pager, you can easily browse through a
 file of any size:
@@ -272,6 +279,10 @@ The hard way:
 Or the easy way:
 
     $ vbibedit 123 4567
+
+=head1 VERSION
+
+Version %VERSION% (last modified %LASTMOD%)
 
 =head1 AUTHOR
 
